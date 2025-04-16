@@ -203,6 +203,8 @@ async def post_init(application: Application) -> None:
 
 def run_bot():
     """Initialize and run the Telegram bot."""
+    import asyncio
+    
     logger.info("Initializing bot")
     
     # Initialize the Application
@@ -214,6 +216,25 @@ def run_bot():
     application.add_handler(CommandHandler("language", language_command))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     
-    # Start the bot
+    # Start the bot using asyncio
     logger.info("Starting bot")
-    application.run_polling(drop_pending_updates=True)
+    
+    # Crear un nuevo evento loop para este hilo
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    
+    # Ejecutar el bot en el loop
+    try:
+        loop.run_until_complete(application.initialize())
+        loop.run_until_complete(application.start())
+        loop.run_until_complete(application.updater.start_polling(drop_pending_updates=True))
+        loop.run_forever()
+    except KeyboardInterrupt:
+        logger.info("Bot stopping...")
+        loop.run_until_complete(application.stop())
+        loop.run_until_complete(application.shutdown())
+        loop.close()
+    except Exception as e:
+        logger.error(f"Error running bot: {e}")
+        if loop.is_running():
+            loop.close()

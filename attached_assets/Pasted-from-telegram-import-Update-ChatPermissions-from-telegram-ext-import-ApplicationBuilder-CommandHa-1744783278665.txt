@@ -1,0 +1,76 @@
+from telegram import Update, ChatPermissions
+from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
+from language_utils import detect_language, translate_text
+import os
+
+# Base de datos simple en memoria
+activated_topics = set()
+user_languages = {}
+
+BOT_TOKEN = os.getenv("BOT_TOKEN", "8128964123:AAHf0vLSgUmmN_3QIzzI6Gqem8-Zg9sTmQE")
+
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.message.chat.type != "supergroup":
+        await update.message.reply_text("Este bot solo funciona en grupos con temas activados.")
+        return
+
+    if update.message.message_thread_id:
+        topic_id = update.message.message_thread_id
+        activated_topics.add(topic_id)
+        await update.message.reply_text("✅ Bot activado en este tema.")
+    else:
+        await update.message.reply_text("❌ Este comando solo funciona en temas específicos del grupo.")
+
+async def set_language(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if len(context.args) != 1:
+        await update.message.reply_text("Uso: /language [código_idioma], por ejemplo: /language es")
+        return
+
+    lang_code = context.args[0]
+    user_id = update.message.from_user.id
+    user_languages[user_id] = lang_code
+    await update.message.reply_text(f"Idioma configurado a: {lang_code}")
+
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        "/start - Activar el bot en este tema (solo admin)\n"
+        "/language [código] - Cambiar tu idioma manualmente\n"
+        "/help - Ver ayuda"
+    )
+
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    msg = update.message
+    if not msg or not msg.text or not msg.message_thread_id:
+        return
+
+    topic_id = msg.message_thread_id
+    if topic_id not in activated_topics:
+        return  # Bot no está activado en este tema
+
+    sender_id = msg.from_user.id
+    sender_lang = user_languages.get(sender_id) or detect_language(msg.text)
+
+    for user_id, lang in user_languages.items():
+        if user_id != sender_id and lang != sender_lang:
+            translated = translate_text(msg.text, lang)
+            try:
+                await context.bot.send_message(
+                    chat_id=msg.chat.id,
+                    text=f"🗨️ *{msg.from_user.first_name}* dijo (traducido):\n_{translated}_",
+                    message_thread_id=msg.message_thread_id,
+                    parse_mode="Markdown",
+                    reply_to_message_id=msg.message_id
+                )
+            except Exception as e:
+                print(f"Error enviando mensaje traducido: {e}")
+
+if __name__ == "__main__":
+    app = ApplicationBuilder().token(BOT_TOKEN).build()
+    
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("language", set_language))
+    app.add_handler(CommandHandler("help", help_command))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+
+    print("🤖 Icarix Translator Bot activo.")
+    app.run_polling()

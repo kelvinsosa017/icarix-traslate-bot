@@ -937,6 +937,7 @@ dependencies = [
     { name = "psycopg2-binary" },
     { name = "python-telegram-bot" },
     { name = "sift-stack-py" },
+    { name = "sqlalchemy" },
     { name = "telegram" },
 ]
 
@@ -954,6 +955,7 @@ requires-dist = [
     { name = "psycopg2-binary", specifier = ">=2.9.10" },
     { name = "python-telegram-bot", specifier = "==20.7" },
     { name = "sift-stack-py", specifier = ">=0.5.0" },
+    { name = "sqlalchemy", specifier = ">=2.0.40" },
     { name = "telegram", specifier = ">=0.0.1" },
 ]
 

@@ -1,6 +1,4 @@
-from keep_alive import keep_alive
-
-keep_alive()
+# Bot de Telegram para traducción automática
 import os
 import logging
 import html

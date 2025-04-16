@@ -208,6 +208,9 @@ def run_bot():
     # Create the Updater and pass it your bot's token
     updater = Updater(BOT_TOKEN)
     
+    # Delete webhook before starting polling
+    updater.bot.delete_webhook()
+    
     # Get the dispatcher to register handlers
     dispatcher = updater.dispatcher
     

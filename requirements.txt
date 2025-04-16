@@ -1,0 +1,9 @@
+flask
+python-dotenv
+gunicorn
+requests
+deep-translator
+iso-639
+langdetect
+sqlalchemy
+telegram
